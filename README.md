@@ -2,8 +2,7 @@
 
 This is the source code repository for the paper Dialogue Discourse Parsing as Generation: a Sequence-to-Sequence LLM-based Approach ([SIGDial 2024](https://2024.sigdial.org)).
 
-<img src="./pic/seq2seq-disc-parse.png" alt="drawing" width="400"/>
-
+<img src="./pic/seq2seq-disc-parse.png" alt="drawing" width="600"/>
 
 ## Datasets
 ### STAC
