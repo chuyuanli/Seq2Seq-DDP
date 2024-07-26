@@ -20,15 +20,15 @@ Here is a step-by-step guide to fine-tune a T5 family model for discourse parsin
 
 ### Create a virtual environment
 ```
-$ source virtualenv/bin/activate
-$ cd Seq2Seq_DDP/
+$ source virtualenvname/bin/activate
+$ cd Seq2Seq-DDP/
 $ pip install -r requirements.txt
 ```
 
 ### Prepare structured data for fine-tuning
 
 In `dataprocess.py`: process the original stac/molweni dataset and convert the raw text to structured text.
-Choose the structured text from: Seq2Seq-DDP end2end: 'natural', 'augmented'; Seq2Seq-DDP+transition: 'focus', 'natural2'.
+Choose the structured text from: 'natural', 'augmented' (Seq2Seq-DDP) and 'focus', 'natural2' (Seq2Seq-DDP+transition).
 Examples for each structure type are given in `data/stac_{structure}_train.json`.
 
 ### Fine-tuning
