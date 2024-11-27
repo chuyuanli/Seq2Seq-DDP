@@ -31,6 +31,7 @@ In `dataprocess.py`: process the original stac/molweni dataset and convert the r
 Choose the structured text from: 
 - Seq2Seq-DDP system: 'natural', 'augmented'
 - Seq2Seq-DDP+transition system: 'focus', 'natural2'
+
 Examples for each structure type are given in `data/stac_{structure}_train.json`.
 
 Note that 'focus' and 'natural2' schemes come from 'natural' scheme. 
