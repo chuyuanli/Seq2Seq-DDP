@@ -19,6 +19,6 @@ seaborn
 tensorboard
 tensorboardX
 rouge_score
-sklearn
+scikit-learn
 jellyfish
 scipy

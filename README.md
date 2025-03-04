@@ -25,6 +25,9 @@ $ cd Seq2Seq-DDP/
 $ pip install -r requirements.txt
 ```
 
+Note: the `tiktoken` package requires a rust compiler. if your installation is failing, try: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+or go to [rust-lang.org](https://rust-lang.org).
+
 ### Prepare structured data for fine-tuning
 
 In `dataprocess.py`: process the original stac/molweni dataset and convert the raw text to structured text.
