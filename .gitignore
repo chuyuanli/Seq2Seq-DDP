@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 
 git_filterbranch.sh
+
+
+# temporary fix - files with a dash somewhere in the name are ignored for example t5-base-stac-train
+*-*

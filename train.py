@@ -13,8 +13,11 @@ from datasets import load_dataset, concatenate_datasets
 
 import pickle
 import json
+import nltk
 from nltk.tokenize import sent_tokenize
-# nltk.download("punkt")
+
+nltk.download('punkt_tab')
+nltk.download("punkt")
 import time
 
 from constant import *
@@ -80,7 +83,7 @@ def setup_tokenizer(cfg):
     print(f"Read hf tokenizer from {local_model_path}")
     
     if cfg.t5_family in ['flan-t5', 't5']:
-        tokenizer = T5Tokenizer.from_pretrained(local_model_path, local_files_only=True)
+        tokenizer = T5Tokenizer.from_pretrained(cfg.pretrained_model_name)  # TODO: change back to local_model_path and fix issue
     elif cfg.t5_family == 't0':
         tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
     
@@ -100,11 +103,23 @@ def setup_tokenizer(cfg):
         special_tokens = [f"[edu{i}]" for i in range(MAX_EDU_LEN)]
         special_tokens += ["[", "]"]
     tokenizer.add_tokens(special_tokens)
+
+    return tokenizer
     
 def train(model, tokenizer, train_data, dev_data, out_dir, cfg):
     """Set up trainer"""
+
+    def get_repository_id(model_name):
+        """
+        Get the repository id for the model.
+        """
+        split_name = model_name.split('/')
+        if len(split_name) == 1:
+            return f"{ROOT_DIR}/{split_name[0]}-stac-train"
+        else:
+            return f"{ROOT_DIR}/{split_name[1]}-{split_name[0]}-stac-train"
     
-    repository_id = f"{ROOT_DIR}/{cfg.pretrained_model_name.split('/')[1]}-stac-train"
+    repository_id = get_repository_id(cfg.pretrained_model_name)
     
     # TrainingArguments
     training_args = Seq2SeqTrainingArguments(
@@ -168,8 +183,9 @@ def exe_train(trainf, devf, tokenizer, cfg):
 
     local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/model")
     print(f"read huggingface model from {local_model_path}")
-    
-    tokenized_inputs = concatenate_datasets([base_train, data_dev]).map(
+    concatenated_dataset = concatenate_datasets([base_train, data_dev])
+
+    tokenized_inputs = concatenated_dataset.map(
                             lambda x: tokenizer(x["dialogue"], truncation=False), 
                             batched=True, 
                             remove_columns=["dialogue", "structure"],
@@ -187,17 +203,17 @@ def exe_train(trainf, devf, tokenizer, cfg):
     
     # tokenize train and dev
     tokenized_train = base_train.map(preprocess_function, 
-                                    fn_kwargs={"tokenizer": tokenizer},
+                                    fn_kwargs={"tokenizer": tokenizer, "max_source_length": max_source_length, "max_target_length": max_target_length},
                                     batched=True, 
                                     remove_columns=["dialogue", "structure", "id"])
     tokenized_dev = data_dev.map(preprocess_function, 
-                                    fn_kwargs={"tokenizer": tokenizer},
+                                    fn_kwargs={"tokenizer": tokenizer, "max_source_length": max_source_length, "max_target_length": max_target_length},
                                     batched=True,
                                     remove_columns=["dialogue", "structure", "id"])
     print(f"Keys of tokenized dataset: {list(tokenized_train.features)}")                        
 
     # set up model
-    model = AutoModelForSeq2SeqLM.from_pretrained(local_model_path,
+    model = AutoModelForSeq2SeqLM.from_pretrained(cfg.pretrained_model_name, # TODO: change back to local_model_path and fix issue
                                         local_files_only=True,
                                         torch_dtype=torch.bfloat16 if cfg.bfloat16 else torch.float32, #torch.float16 or torch.bfloat16 or torch.float, default load torch.float (fp32)
                                         device_map="auto" # pip install accelerate. torchrun .py
@@ -314,13 +330,13 @@ if __name__=="__main__":
     model_size = args.model_size
     namematch = {"t0-3b": f"bigscience/T0_3B",
                 "flan-t5": f"google/flan-t5-{model_size}",
-                "t5": f"google-t5/t5-{model_size}"}
-    pretrained_model_name = namematch[t5_family]
+                "t5": f"t5-{model_size}"}
+    args.pretrained_model_name = namematch[t5_family]
         
     # load train, dev, test
-    trainf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_train.json"
-    devf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_dev.json" 
-    testf = f"{ROOT_DIR}/data/{test_corpus}_{structure_type}_test.json" 
+    trainf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_train.jsonl"
+    devf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_dev.jsonl" 
+    testf = f"{ROOT_DIR}/data/{test_corpus}_{structure_type}_test.jsonl" 
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
