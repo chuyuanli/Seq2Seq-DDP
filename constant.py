@@ -1,8 +1,12 @@
+import os
+
+pwd = os.getcwd()
+
 # paths
-ROOT_DIR = "yourpathto/seq2seq-disc-parsing"
-DATA_DIR = "yourpathto/seq2seq-disc-parsing/data"
-HF_MODEL_DIR = "yourpathto/.cache/huggingface/hub"
-FT_MODEL_DIR = "yourpathto/seq2seq-disc-parsing/ft-models"
+ROOT_DIR = pwd
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+HF_MODEL_DIR = "~/.cache/huggingface/hub"
+FT_MODEL_DIR = os.path.join(ROOT_DIR, "ft-models")
 
 # default values
 DEFAULT_REL = "Question_answer_pair"
