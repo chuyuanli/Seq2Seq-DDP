@@ -1,8 +1,8 @@
 # paths
-ROOT_DIR = "yourpathto/seq2seq-disc-parsing"
-DATA_DIR = "yourpathto/seq2seq-disc-parsing/data"
-HF_MODEL_DIR = "yourpathto/.cache/huggingface/hub"
-FT_MODEL_DIR = "yourpathto/seq2seq-disc-parsing/ft-models"
+ROOT_DIR = "yourpathto/Seq2Seq-DDP"
+DATA_DIR = "yourpathto/Seq2Seq-DDP/data"
+HF_MODEL_DIR = "yourpathto/.cache/huggingface/hub/fp32"
+FT_MODEL_DIR = "yourpathto/Seq2Seq-DDP/ft-models"
 
 # default values
 DEFAULT_REL = "Question_answer_pair"

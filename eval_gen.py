@@ -366,7 +366,8 @@ def evaluate_transition_result(fted_model, train_corpus='stac', test_corpus='sta
     recall = TP_link / G_link * 100
     precision = TP_link / (P_link-4) * 100
     f1 = 2 * recall * precision / (recall + precision)
-    print(f"[linkonly] recall: {round(recall, 2)}, precision: {round(precision, 2)}, f1: {round(f1, 2)}") 
+    print(f"[linkonly] recall: {round(recall, 2)}, precision: {round(precision, 2)}, f1: {round(f1, 2)}")
+    print()
 
            
 if __name__=='__main__':
@@ -394,8 +395,8 @@ if __name__=='__main__':
     else:
         max_infer_len=512
         
-    evaluate_gen_result(fted_model, train_corpus=train_corpus, test_corpus=test_corpus, \
-                        structure_type=structure_type, max_infer_len=max_infer_len, seed=seed, lr=lr)
+    # evaluate_gen_result(fted_model, train_corpus=train_corpus, test_corpus=test_corpus, \
+    #                     structure_type=structure_type, max_infer_len=max_infer_len, seed=seed, lr=lr)
     
 
     evaluate_transition_result(fted_model, train_corpus=train_corpus, test_corpus=test_corpus, \

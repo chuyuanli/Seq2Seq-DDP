@@ -128,7 +128,8 @@ def extract_structured_text(dataset, split, structure_type, max_edu=37):
         for dict in train_dataset:
             string = json.dumps(dict)
             outf.write(string+'\n')
-       
+    
+    
 def extract_transition_based_text(dataset, split, structure_type):
     """Generate transition-based data set.
 
@@ -255,7 +256,7 @@ if __name__=="__main__":
     split = args.split
     structure_type = args.structure_type
 
-    extract_structured_text(dataset, split, structure_type)
+    # extract_structured_text(dataset, split, structure_type)
     
     extract_transition_based_text(dataset, split, structure_type)
  

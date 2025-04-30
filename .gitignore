@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 
 git_filterbranch.sh
+
+download_hf.py
+T0_3B-stac-train/
+requirements2.txt

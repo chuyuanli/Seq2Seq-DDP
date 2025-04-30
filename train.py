@@ -37,12 +37,8 @@ def preprocess_function(samples, tokenizer, max_source_length, max_target_length
     return model_inputs
 
 # Metric
-try:
-    # if error with loading rouge metric, download rouge.py and use it locally
-    metric = datasets.load_metric(f"{ROOT_DIR}/rouge.py")
-    print('load metric locally')
-except:
-    metric = evaluate.load("rouge")
+metric = evaluate.load(f"{ROOT_DIR}/rouge.py")
+print("rouge score loaded.")
 
 # Helper function to postprocess text
 def postprocess_text(preds, labels):
@@ -76,12 +72,13 @@ def compute_metrics(eval_preds):
     return result
 
 def setup_tokenizer(cfg):
-    local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/model")
+    local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/032a20e775dd500df0a5a7f404466183d67f172b")
     print(f"Read hf tokenizer from {local_model_path}")
+    input()
     
     if cfg.t5_family in ['flan-t5', 't5']:
         tokenizer = T5Tokenizer.from_pretrained(local_model_path, local_files_only=True)
-    elif cfg.t5_family == 't0':
+    elif cfg.t5_family == 't0-3b':
         tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
     
     # update tokenizer with special tokens
@@ -101,6 +98,10 @@ def setup_tokenizer(cfg):
         special_tokens += ["[", "]"]
     tokenizer.add_tokens(special_tokens)
     
+    # print(tokenizer)
+    return tokenizer
+    
+    
 def train(model, tokenizer, train_data, dev_data, out_dir, cfg):
     """Set up trainer"""
     
@@ -119,7 +120,7 @@ def train(model, tokenizer, train_data, dev_data, out_dir, cfg):
         bf16=True if cfg.bfloat16 else False, #default False, Requires Ampere or higher NVIDIA architecture or using CPU (use_cpu) or Ascend NPU.
         predict_with_generate=True,
         num_train_epochs=cfg.epoch,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         eval_steps=cfg.step,
         logging_dir=f"{repository_id}/logs",
         logging_strategy='steps',
@@ -149,8 +150,8 @@ def train(model, tokenizer, train_data, dev_data, out_dir, cfg):
     )
 
     trainer.train()
-    
     return trainer
+
 
 def exe_train(trainf, devf, tokenizer, cfg):
     """Execute training / fine-tuning.
@@ -165,8 +166,8 @@ def exe_train(trainf, devf, tokenizer, cfg):
     base_train = load_dataset('json', data_files=trainf)['train'] 
     data_dev = load_dataset('json', data_files=devf)['train']
     print(len(base_train['dialogue']), len(data_dev['dialogue']))
-
-    local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/model")
+    
+    local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/032a20e775dd500df0a5a7f404466183d67f172b")
     print(f"read huggingface model from {local_model_path}")
     
     tokenized_inputs = concatenate_datasets([base_train, data_dev]).map(
@@ -187,11 +188,16 @@ def exe_train(trainf, devf, tokenizer, cfg):
     
     # tokenize train and dev
     tokenized_train = base_train.map(preprocess_function, 
-                                    fn_kwargs={"tokenizer": tokenizer},
+                                    fn_kwargs={"tokenizer": tokenizer, 
+                                               "max_source_length": max_source_length,
+                                               "max_target_length": max_target_length
+                                               },
                                     batched=True, 
                                     remove_columns=["dialogue", "structure", "id"])
     tokenized_dev = data_dev.map(preprocess_function, 
-                                    fn_kwargs={"tokenizer": tokenizer},
+                                    fn_kwargs={"tokenizer": tokenizer,
+                                               "max_source_length": max_source_length,
+                                               "max_target_length": max_target_length},
                                     batched=True,
                                     remove_columns=["dialogue", "structure", "id"])
     print(f"Keys of tokenized dataset: {list(tokenized_train.features)}")                        
@@ -199,7 +205,7 @@ def exe_train(trainf, devf, tokenizer, cfg):
     # set up model
     model = AutoModelForSeq2SeqLM.from_pretrained(local_model_path,
                                         local_files_only=True,
-                                        torch_dtype=torch.bfloat16 if cfg.bfloat16 else torch.float32, #torch.float16 or torch.bfloat16 or torch.float, default load torch.float (fp32)
+                                        torch_dtype=torch.bfloat16 if cfg.bfloat16 else torch.float32, #torch.float16 or torch.bfloat16 or torch.float, load float32
                                         device_map="auto" # pip install accelerate. torchrun .py
                                         )
     model.resize_token_embeddings(len(tokenizer))
@@ -217,6 +223,7 @@ def exe_train(trainf, devf, tokenizer, cfg):
         pickle.dump(train_dev, outf)
         
     print(f"time {time.time()-t}, train time/doc : {(time.time()-t)/len(base_train['dialogue'])}")
+            
                     
 def exe_test(testf, device, cfg):
     """Execute prediction.
@@ -283,6 +290,9 @@ def exe_test(testf, device, cfg):
 
 if __name__=="__main__":
     
+    # Usage example
+    # python train.py --train_corpus stac --do_train -s focus -t t0-3b -m 3b -l 5e-5 -e 6 --batchsize 4 --step 500 --seed 27
+    
     parser = argparse.ArgumentParser()            
     
     parser.add_argument("--train_corpus", type=str, default="stac", help="train corpus: stac, molweni")
@@ -315,17 +325,18 @@ if __name__=="__main__":
     namematch = {"t0-3b": f"bigscience/T0_3B",
                 "flan-t5": f"google/flan-t5-{model_size}",
                 "t5": f"google-t5/t5-{model_size}"}
-    pretrained_model_name = namematch[t5_family]
+    args.pretrained_model_name = namematch[t5_family]
         
     # load train, dev, test
     trainf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_train.json"
     devf = f"{ROOT_DIR}/data/{train_corpus}_{structure_type}_dev.json" 
     testf = f"{ROOT_DIR}/data/{test_corpus}_{structure_type}_test.json" 
 
+    set_seed(seed=args.seed)
+    
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    
-    set_seed(seed=args.seed)
+    print(device)
     
     # set up tokenizer
     tokenizer = setup_tokenizer(cfg=args)
