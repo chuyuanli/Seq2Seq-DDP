@@ -20,7 +20,8 @@ Here is a step-by-step guide to fine-tune a T5 family model for discourse parsin
 
 ### Create a virtual environment
 ```
-$ source virtualenvname/bin/activate
+$ python3 -m venv .envS2S
+$ source .envS2S/bin/activate
 $ cd Seq2Seq-DDP/
 $ pip install -r requirements.txt
 ```
@@ -34,22 +35,26 @@ Choose the structured text from:
 
 Examples for each structure type are given in `data/stac_{structure}_train.json`.
 
-Note that 'focus' and 'natural2' schemes come from 'natural' scheme. 
-We provide the converted 'natural' format for your convenience.
+Note that 'focus' and 'natural2' schemes are converted from 'natural' scheme.
+
+We provide STAC 'natural' and 'focus' format for your convenience.
 
 ### Fine-tuning
 
-In `train.py`: give "do_train" as argument. 
+In `train.py`: pass "do_train" as argument. 
 This code fine-tunes a t5 familiy model for discourse parsing. 
+
+**Note**: download the original model with fp32.
 
 ### End2end prediction and transition-based prediction
 
-- Seq2seq-DDP prediction: in `train.py`, give argument "do_test", choose structure type from 'augmented', 'natural'.
-Make sure to first put the fine-tuned model checkpoint in `constant.py`. Results will be written in `generation/`.
+- Seq2seq-DDP prediction: in `train.py`, pass argument "do_test" for `end2end`-style prediction, choose structure type from {'augmented', 'natural'}.
 
-- Seq2Seq-DDP+transition system prediction: in `transition_predict.py`: choose structure type from 'focus', 'natural2'.
+Make sure to first put the fine-tuned model checkpoint in `constant.py`. Results will be written in repo `generation/`.
 
-- `evaluate.py`: Evaluate predicted files in `generation/` and calculate scores.
+- Seq2Seq-DDP+transition system prediction: in `transition_predict.py`: choose structure type from {'focus', 'natural2'}.
+
+- `eval_gen.py`: Evaluate predicted files in `generation/` and calculate scores.
 
 - `constant.py`: store paths, labels, etc.
 
