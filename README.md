@@ -19,6 +19,7 @@ Download the dataset and place it in `data/molweni/`.
 Here is a step-by-step guide to fine-tune a T5 family model for discourse parsing:
 
 ### Create a virtual environment
+Python version: 3.11
 ```
 $ python3 -m venv .envS2S
 $ source .envS2S/bin/activate
