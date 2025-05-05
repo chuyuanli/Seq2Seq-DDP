@@ -74,8 +74,11 @@ def compute_metrics(eval_preds):
 def setup_tokenizer(cfg):
     local_model_path = os.path.join(HF_MODEL_DIR, "models--" + "--".join(cfg.pretrained_model_name.split("/")), "snapshots/032a20e775dd500df0a5a7f404466183d67f172b")
     print(f"Read hf tokenizer from {local_model_path}")
-    input()
+    # input()
     
+    # NOTE: local_files_only=True is used to load the model from local cache
+    # if want to download the model from Hugging Face, set it to False
+    # and change the local_model_path to the model name such as "bigscience/T0_3B".
     if cfg.t5_family in ['flan-t5', 't5']:
         tokenizer = T5Tokenizer.from_pretrained(local_model_path, local_files_only=True)
     elif cfg.t5_family == 't0-3b':
